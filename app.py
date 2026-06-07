@@ -30,5 +30,5 @@ def create_app():
         loop.run_forever()
 
 if __name__ == "__main__":
-    # create_app()
-    reloader = hupper.start_reloader("app.create_app")
+    create_app()
+    # reloader = hupper.start_reloader("app.create_app")

@@ -126,9 +126,9 @@ class MainWindow(QMainWindow):
                 color = "red"
 
             self.response_editor.setPlainText(str(result["content"]))
-            self.status_label.setText(f"Status:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result["status"])} {HTTP_STATUS_CODES[result["status"]]}</span>")
-            self.size_label.setText(f"Size:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result["size"])} bytes</span>")
-            self.time_label.setText(f"Time:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result["time"])} ms</span>")
+            self.status_label.setText(f"Status:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['status'])} {HTTP_STATUS_CODES[result['status']]}</span>")
+            self.size_label.setText(f"Size:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['size'])} bytes</span>")
+            self.time_label.setText(f"Time:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['time'])} ms</span>")
             self.send_button.setDisabled(False)
             self.send_button.setText("Send")
         except Exception as e:

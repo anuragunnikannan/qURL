@@ -1,4 +1,6 @@
 __pycache__
 .flatpak-builder
+flatpak-build-dir
+env
 build-dir
 .venv

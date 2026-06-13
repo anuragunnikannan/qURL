@@ -1,0 +1,33 @@
+{
+    "id": "com.anurag.qURL",
+    "runtime": "org.kde.Platform",
+    "runtime-version": "6.10",
+    "sdk": "org.kde.Sdk",
+    "base": "io.qt.PySide.BaseApp",
+    "base-version": "6.10",
+    "command": "qURL",
+    "finish-args": [
+        "--socket=wayland",
+        "--socket=x11",
+        "--socket=fallback-x11",
+        "--share=ipc",
+        "--device=dri",
+        "--share=network"
+    ],
+    "modules": [
+        "python3-requirements-build.json",
+        {
+            "name": "qURL",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-build-isolation --no-deps --prefix=/app ."
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "."
+                }
+            ]
+        }
+  ]
+}

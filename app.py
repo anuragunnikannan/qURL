@@ -6,7 +6,7 @@ from qasync import QEventLoop
 import asyncio
 from PySide6.QtCore import Qt
 from ui import MainWindow
-import hupper
+# import hupper
 
 
 def create_app():

@@ -21,7 +21,7 @@ def create_app():
         QApplication.styleHints().setColorScheme(Qt.ColorScheme.Light)
         
     window = MainWindow()
-    window.showMinimized()
+    window.show()
 
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)

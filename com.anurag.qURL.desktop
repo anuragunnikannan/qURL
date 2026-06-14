@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=qURL
+Comment=An extremely lightweight, no-frills REST API testing tool.
+Exec=qURL
+Icon=com.anurag.qURL
+Terminal=false
+Categories=Utility;Development;

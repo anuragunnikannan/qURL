@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.anurag.qURL</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>qURL</name>
+  <summary>An extremely lightweight, no-frills REST API testing tool.</summary>
+  <description>
+    <p>qURL is a handy developer utility tool for API testing.</p>
+  </description>
+  <launchable type="desktop-id">com.anurag.qURL.desktop</launchable>
+  <developer_name>Anurag</developer_name>
+  <url type="homepage">https://github.com/anuragunnikannan/qURL</url>
+</component>

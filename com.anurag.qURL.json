@@ -28,6 +28,22 @@
                     "path": "."
                 }
             ]
+        },
+        {
+            "name": "qURL",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-build-isolation --no-deps --prefix=/app .",
+                "install -Dm644 com.anurag.qURL.desktop /app/share/applications/com.anurag.qURL.desktop",
+                "install -Dm644 com.anurag.qURL.metainfo.xml /app/share/metainfo/com.anurag.qURL.metainfo.xml",
+                "install -Dm644 com.anurag.qURL.svg /app/share/icons/hicolor/512x512/apps/com.anurag.qURL.svg"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "."
+                }
+            ]
         }
-  ]
+    ]
 }

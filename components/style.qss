@@ -1,0 +1,26 @@
+#method_selector {
+    padding: 5px;
+}
+
+#url_input {
+    padding: 5px;
+}
+
+#send_button {
+    background-color: #0078d7;
+    padding: 7px;
+    border-radius: 5px;
+    font-weight: normal;
+}
+
+#send_button:disabled {
+    background-color: #2e2e32;
+}
+
+QTableWidget::item:selected {
+    background-color: transparent;
+}
+
+#delete_header_item_button {
+    border-radius: 5px;
+}

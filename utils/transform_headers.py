@@ -8,3 +8,10 @@ def transform_headers(headers:str):
             headers_dict[k] = v
 
     return headers_dict
+
+def transform_headers_dict(headers_dict:dict):
+    headers = ""
+    for k, v in headers_dict.items():
+        headers += f"{k}: {v}\n"
+    
+    return headers

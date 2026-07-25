@@ -16,3 +16,4 @@ qasync==0.28.0
 requests==2.32.5
 shiboken6==6.10.2
 urllib3==2.6.3
+qt-material-icons==0.5.0

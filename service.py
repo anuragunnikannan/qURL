@@ -12,7 +12,7 @@ async def get(url, headers):
     
     res["status"] = result.status_code
     res["time"] = round((end_time - start_time) * 1000, 2)
-    res["headers"] = result.headers
+    res["headers"] = dict(result.headers)
     res["size"] = len(result.content)
 
     if result.headers["content-type"] == "application/json":
@@ -92,7 +92,7 @@ async def delete(url, headers):
     return res
 
 def invoke(url, method, headers, body):
-    headers = transform_headers(headers)
+    # headers = transform_headers(headers)
     if method == "GET":
         return get(url, headers)
     elif method == "POST":

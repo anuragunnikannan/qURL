@@ -1,28 +1,39 @@
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHeaderView
 from PySide6.QtGui import QIcon, Qt
 from qt_material_icons import MaterialIcon
 
-class RequestHeadersTable(QWidget):
-    def __init__(self):
+class Table(QWidget):
+    def __init__(self, editable=True):
         super().__init__()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels([" ", "Key", "Value"])
+        self.table = None
+        if editable:
+            self.table = QTableWidget(0, 3)
+            self.table.setHorizontalHeaderLabels([" ", "Key", "Value"])
+            self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+            self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+            self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+            self.table.setColumnWidth(0, 36)
+            self.add_row()
+            self.table.cellChanged.connect(self.on_cell_changed)
+        else:
+            self.table = QTableWidget(0, 2)
+            self.table.setHorizontalHeaderLabels(["Key", "Value"])
+            self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+            self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+
+            self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+
         self.table.verticalHeader().hide()
-
+        self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.table.setWordWrap(True)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(0, 36)
         self.table.horizontalHeader().setStretchLastSection(True)
-        
+
         layout.addWidget(self.table)
-        self.add_row()
-        self.table.cellChanged.connect(self.on_cell_changed)
 
     def add_row(self):
         row_position = self.table.rowCount()
@@ -52,8 +63,8 @@ class RequestHeadersTable(QWidget):
 
         self.table.removeRow(index.row())
     
-    def get_headers(self):
-        headers = {}
+    def get_data(self):
+        data = {}
         for row in range(self.table.rowCount()):
             key_item = self.table.item(row, 1)
             value_item = self.table.item(row, 2)
@@ -61,8 +72,15 @@ class RequestHeadersTable(QWidget):
                 key = key_item.text().strip()
                 value = value_item.text().strip()
                 if key and value:
-                    headers[key] = value
-        return headers
+                    data[key] = value
+        return data
+
+    def set_data(self, data):
+        for key, value in data.items():
+            self.table.insertRow(self.table.rowCount())
+            row_position = self.table.rowCount() - 1
+            self.table.setItem(row_position, 0, QTableWidgetItem(key))
+            self.table.setItem(row_position, 1, QTableWidgetItem(value))
     
     def on_cell_changed(self, row, column):
         if row == self.table.rowCount() - 1:

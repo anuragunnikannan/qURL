@@ -10,16 +10,10 @@ import os
 import components
 # import hupper
 
-# def load_stylesheet(app, filepath):
-#     file = QFile(filepath)
-#     if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
-#         stream = QTextStream(file)
-#         app.setStyleSheet(stream.readAll())
-
 def create_app():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    # load_stylesheet(app, "style.qss")
+
     base_dir = os.path.dirname(os.path.abspath(components.__file__))
     qss_path = os.path.join(base_dir, "style.qss")
     with open(qss_path, "r") as f:
@@ -37,7 +31,7 @@ def create_app():
 
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
-    # app.setDesktopFileName("qURL") 
+
     with loop:
         loop.run_forever()
 

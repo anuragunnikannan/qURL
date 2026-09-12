@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, QFile, QTextStream
 from ui import MainWindow
 import os
 import components
-# import hupper
+import hupper
 
 def create_app():
     app = QApplication(sys.argv)
@@ -36,5 +36,5 @@ def create_app():
         loop.run_forever()
 
 if __name__ == "__main__":
-    create_app()
-    # reloader = hupper.start_reloader("app.create_app")
+    # create_app()
+    reloader = hupper.start_reloader("app.create_app")

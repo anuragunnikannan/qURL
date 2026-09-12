@@ -24,3 +24,21 @@ QTableWidget::item:selected {
 #delete_header_item_button {
     border-radius: 5px;
 }
+
+#body_content_type_tab_widget QTabBar::tab {
+    padding: 3px 10px;
+    font-size: 11px;
+    background: transparent;
+}
+
+#body_content_type_tab_widget QTabBar::tab:selected {
+    /* background: #2b2b36; */
+    border-bottom: 1px solid #0078d7;
+    /* color: #ffffff; */
+}
+
+#raw_content_type_selector {
+    /* padding: 3px; */
+    font-size: 11px;
+    /* background: transparent; */
+}

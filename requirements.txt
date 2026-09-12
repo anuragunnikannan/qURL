@@ -17,3 +17,5 @@ requests==2.32.5
 shiboken6==6.10.2
 urllib3==2.6.3
 qt-material-icons==0.5.0
+pygments==2.20.0
+beautifulsoup4==4.15.0

@@ -1,17 +1,17 @@
-from PySide6.QtWidgets import QApplication, QTableWidget, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QPushButton, QPlainTextEdit, QSplitter, QTabWidget, QLabel, QStyledItemDelegate
+from PySide6.QtWidgets import QApplication, QButtonGroup, QRadioButton, QSizePolicy, QStackedWidget, QTableWidget, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QPushButton, QPlainTextEdit, QSplitter, QTabWidget, QLabel, QStyledItemDelegate
 from PySide6.QtGui import Qt, QFont, QFontMetrics
+from components.dynamic_syntax_highlighter import DynamicHighlighter
 from components.table import Table
 import service
 from components.syntax_highlighter import JsonHighlighter
 from qasync import asyncSlot
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 from qt_material_icons import MaterialIcon
 from components.code_editor import CodeEditor
 from utils.http_status_codes import HTTP_STATUS_CODES
+from utils.formatter import format_response
 import traceback
-
-from utils.transform_headers import transform_headers_dict
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -48,19 +48,43 @@ class MainWindow(QMainWindow):
         top_layout.addWidget(self.send_button)
 
         self.header_input = Table(editable=True)
-        self.body_input = CodeEditor()
+        self.body_input_raw_editor = CodeEditor()
         metrics = QFontMetrics(self.header_input.font())
-        self.body_input.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
-        self.body_input.setFont(QFont("monospace"))
-        self.highlighter = JsonHighlighter(self.body_input.document())
+        self.body_input_raw_editor.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
+        self.body_input_raw_editor.setFont(QFont("monospace"))
+        # self.highlighter = JsonHighlighter(self.body_input_raw_editor.document())
+        # self.raw_highlighter = DynamicHighlighter(
+                    # self.body_input_raw_editor.document()
+                # )
+
+        body_tab = QWidget()
+        body_tab_layout = QVBoxLayout(body_tab)
+        body_tab_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.body_content_type_tab_widget = QTabWidget()
+        self.body_content_type_tab_widget.setObjectName("body_content_type_tab_widget")
+        self.body_content_type_tab_widget.addTab(QStackedWidget(), "none")
+        self.body_content_type_tab_widget.addTab(QStackedWidget(), "form-data")
+        self.body_content_type_tab_widget.addTab(QStackedWidget(), "urlencoded")
+        self.body_content_type_tab_widget.addTab(QStackedWidget(), "binary")
+        self.body_content_type_tab_widget.addTab(self.body_input_raw_editor, "raw")
+
+        self.raw_content_type_selector = QComboBox()
+        self.raw_content_type_selector.setObjectName("raw_content_type_selector")
+        self.raw_content_type_selector.addItems(["json", "html", "xml", "text"])
+        self.raw_content_type_selector.hide()
+        self.raw_body_content_highlighter = DynamicHighlighter(self.body_input_raw_editor.document())
+        self.raw_content_type_selector.currentTextChanged.connect(self.on_raw_content_type_changed)
+
+        # self.body_content_type_tab_widget.currentChanged.connect(lambda index: self.raw_content_type_selector.setVisible(index == 4))
+        self.body_content_type_tab_widget.currentChanged.connect(self.body_content_type_tab_widget_changed)
+
+        self.body_content_type_tab_widget.setCornerWidget(self.raw_content_type_selector, Qt.BottomRightCorner)
+        body_tab_layout.addWidget(self.body_content_type_tab_widget)
 
         central_layout = QSplitter(Qt.Horizontal)
 
         request_tab_widget = QTabWidget()
-
-        body_tab = QWidget()
-        body_tab_layout = QVBoxLayout(body_tab)
-        body_tab_layout.addWidget(self.body_input)
 
         request_tab_widget.addTab(self.header_input, "Headers")
         request_tab_widget.addTab(body_tab, "Body")
@@ -72,12 +96,24 @@ class MainWindow(QMainWindow):
         self.size_label = QLabel("")
         self.time_label = QLabel("")
       
-        self.response_editor = CodeEditor()
-        metrics = QFontMetrics(self.response_editor.font())
-        self.response_editor.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
-        self.response_editor.setFont(QFont("monospace"))
-        self.response_editor.setReadOnly(True)
-        self.highlighter = JsonHighlighter(self.response_editor.document())
+        self.response_viewer = CodeEditor()
+        metrics = QFontMetrics(self.response_viewer.font())
+        self.response_viewer.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
+        self.response_viewer.setFont(QFont("monospace"))
+        self.response_viewer.setReadOnly(True)
+        # self.highlighter = JsonHighlighter(self.response_viewer.document())
+        # Dynamic highlighter setup
+        self.response_viewer_highlighter = DynamicHighlighter(
+            self.response_viewer.document()
+        )
+        # self.detected_mime_type = "text/plain"
+
+        # # Debounce timer for language detection
+        # self.detect_timer = QTimer(self)
+        # self.detect_timer.setSingleShot(True)
+        # self.detect_timer.setInterval(300)
+        # self.detect_timer.timeout.connect(self.on_raw_content_changed)
+        # self.body_input_raw_editor.textChanged.connect(self.detect_timer.start)
 
         # self.response_header_editor = QPlainTextEdit()
         # self.response_header_editor.setReadOnly(True)
@@ -86,12 +122,13 @@ class MainWindow(QMainWindow):
         response_tab_widget = QTabWidget()
         
 
-        response_tab_widget.addTab(self.response_editor, "Response")
+        response_tab_widget.addTab(self.response_viewer, "Response")
         response_tab_widget.addTab(self.response_header_editor, "Headers")
         
         central_layout.addWidget(response_tab_widget)
-        
-
+        central_layout.setStretchFactor(0, 1)
+        central_layout.setStretchFactor(1, 1)
+        central_layout.setSizes([500, 500])
 
         outer_layout = QVBoxLayout()
         outer_layout.addLayout(top_layout)
@@ -109,7 +146,7 @@ class MainWindow(QMainWindow):
     async def button_clicked(self):
         self.send_button.setDisabled(True)
         try:
-            result = await service.invoke(url=self.line_edit.text(), method=self.combo_box.currentText(), headers=self.header_input.get_data(), body=self.body_input.toPlainText())
+            result = await service.invoke(url=self.line_edit.text(), method=self.combo_box.currentText(), headers=self.header_input.get_data(), body=self.body_input_raw_editor.toPlainText())
 
             color = "white"
             if result["status"] >= 100 and result["status"] < 200:
@@ -121,9 +158,9 @@ class MainWindow(QMainWindow):
             else:
                 color = "red"
 
-            self.response_editor.setPlainText(str(result["content"]))
-            # print(transform_headers_dict(result["headers"]))
             self.response_header_editor.set_data(result["headers"])
+            self.response_viewer.setPlainText(format_response(str(result["content"]), result["headers"]["content-type"]))
+            self.response_viewer_highlighter.detect_and_update(str(result["content"]))
 
             self.status_label.setText(f"Status:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['status'])} {HTTP_STATUS_CODES[result['status']]}</span>")
             self.size_label.setText(f"Size:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['size'])} bytes</span>")
@@ -139,3 +176,29 @@ class MainWindow(QMainWindow):
             traceback.print_exc()
             self.send_button.setDisabled(False)
             self.send_button.setText("Send  ")
+
+    def on_raw_content_type_changed(self, content_type: str):
+        mime_type_mapping = {
+            "json": "application/json",
+            "html": "text/html",
+            "xml": "application/xml",
+            "text": "text/plain"
+        }
+        self.raw_body_content_highlighter.set_language(content_type)
+
+        headers = self.header_input.get_data()
+        headers["Content-Type"] = mime_type_mapping.get(content_type, "text/plain")
+        self.header_input.set_data(headers)
+
+    def body_content_type_tab_widget_changed(self, index):
+        mime_type_mapping = {
+            0: "text/plain",  # none
+            1: "multipart/form-data",  # form-data  
+            2: "application/x-www-form-urlencoded",  # urlencoded
+            3: "application/octet-stream",  # binary
+            4: "application/json"
+        }
+        self.raw_content_type_selector.setVisible(index == 4)
+        headers = self.header_input.get_data()
+        headers["Content-Type"] = mime_type_mapping.get(index, "text/plain")
+        self.header_input.set_data(headers)

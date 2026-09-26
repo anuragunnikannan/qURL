@@ -1,6 +1,7 @@
-from PySide6.QtWidgets import QApplication, QButtonGroup, QRadioButton, QSizePolicy, QStackedWidget, QTableWidget, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QPushButton, QPlainTextEdit, QSplitter, QTabWidget, QLabel, QStyledItemDelegate
+from PySide6.QtWidgets import QApplication, QButtonGroup, QFileDialog, QRadioButton, QSizePolicy, QStackedWidget, QTableWidget, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QPushButton, QPlainTextEdit, QSplitter, QTabWidget, QLabel, QStyledItemDelegate
 from PySide6.QtGui import Qt, QFont, QFontMetrics
 from components.dynamic_syntax_highlighter import DynamicHighlighter
+from components.files_table import FilesTable
 from components.table import Table
 import service
 from components.syntax_highlighter import JsonHighlighter
@@ -52,21 +53,41 @@ class MainWindow(QMainWindow):
         metrics = QFontMetrics(self.header_input.font())
         self.body_input_raw_editor.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         self.body_input_raw_editor.setFont(QFont("monospace"))
-        # self.highlighter = JsonHighlighter(self.body_input_raw_editor.document())
-        # self.raw_highlighter = DynamicHighlighter(
-                    # self.body_input_raw_editor.document()
-                # )
 
         body_tab = QWidget()
         body_tab_layout = QVBoxLayout(body_tab)
         body_tab_layout.setContentsMargins(0, 0, 0, 0)
 
+        self.body_content_urlencoded_table = Table(editable=True)
+
+
+        form_data_layout_widget = QWidget()
+        form_data_layout = QVBoxLayout(form_data_layout_widget)
+
+        form_fields_label = QLabel("Form Fields")
+        self.body_content_formdata_table = Table(editable=True)
+        fields_label = QLabel("Files")
+        self.body_content_files_table = FilesTable()
+        form_data_layout.addWidget(form_fields_label)
+        form_data_layout.addWidget(self.body_content_formdata_table)
+        form_data_layout.addWidget(fields_label)
+        form_data_layout.addWidget(self.body_content_files_table)
+
+        binary_file_layout_widget = QWidget()
+        binary_file_layout = QVBoxLayout(binary_file_layout_widget)
+        binary_file_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.body_content_binary_file_path = QLabel("No file selected")
+        select_file_button = QPushButton("Select File")
+        select_file_button.clicked.connect(self.select_binary_file)
+        binary_file_layout.addWidget(self.body_content_binary_file_path)
+        binary_file_layout.addWidget(select_file_button)
+
         self.body_content_type_tab_widget = QTabWidget()
         self.body_content_type_tab_widget.setObjectName("body_content_type_tab_widget")
         self.body_content_type_tab_widget.addTab(QStackedWidget(), "none")
-        self.body_content_type_tab_widget.addTab(QStackedWidget(), "form-data")
-        self.body_content_type_tab_widget.addTab(QStackedWidget(), "urlencoded")
-        self.body_content_type_tab_widget.addTab(QStackedWidget(), "binary")
+        self.body_content_type_tab_widget.addTab(form_data_layout_widget, "form-data")
+        self.body_content_type_tab_widget.addTab(self.body_content_urlencoded_table, "urlencoded")
+        self.body_content_type_tab_widget.addTab(binary_file_layout_widget, "binary")
         self.body_content_type_tab_widget.addTab(self.body_input_raw_editor, "raw")
 
         self.raw_content_type_selector = QComboBox()
@@ -76,7 +97,6 @@ class MainWindow(QMainWindow):
         self.raw_body_content_highlighter = DynamicHighlighter(self.body_input_raw_editor.document())
         self.raw_content_type_selector.currentTextChanged.connect(self.on_raw_content_type_changed)
 
-        # self.body_content_type_tab_widget.currentChanged.connect(lambda index: self.raw_content_type_selector.setVisible(index == 4))
         self.body_content_type_tab_widget.currentChanged.connect(self.body_content_type_tab_widget_changed)
 
         self.body_content_type_tab_widget.setCornerWidget(self.raw_content_type_selector, Qt.BottomRightCorner)
@@ -101,22 +121,12 @@ class MainWindow(QMainWindow):
         self.response_viewer.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         self.response_viewer.setFont(QFont("monospace"))
         self.response_viewer.setReadOnly(True)
-        # self.highlighter = JsonHighlighter(self.response_viewer.document())
+        
         # Dynamic highlighter setup
         self.response_viewer_highlighter = DynamicHighlighter(
             self.response_viewer.document()
         )
-        # self.detected_mime_type = "text/plain"
-
-        # # Debounce timer for language detection
-        # self.detect_timer = QTimer(self)
-        # self.detect_timer.setSingleShot(True)
-        # self.detect_timer.setInterval(300)
-        # self.detect_timer.timeout.connect(self.on_raw_content_changed)
-        # self.body_input_raw_editor.textChanged.connect(self.detect_timer.start)
-
-        # self.response_header_editor = QPlainTextEdit()
-        # self.response_header_editor.setReadOnly(True)
+        
         self.response_header_editor = Table(editable=False)
 
         response_tab_widget = QTabWidget()
@@ -146,7 +156,26 @@ class MainWindow(QMainWindow):
     async def button_clicked(self):
         self.send_button.setDisabled(True)
         try:
-            result = await service.invoke(url=self.line_edit.text(), method=self.combo_box.currentText(), headers=self.header_input.get_data(), body=self.body_input_raw_editor.toPlainText())
+            body_content = None
+            files = None
+            if self.body_content_type_tab_widget.currentIndex() == 1:  # form-data
+                body_content = self.body_content_formdata_table.get_data()
+                files_content = self.body_content_files_table.get_data()
+                
+                files = {key: open(value, 'rb') for key, value in files_content.items() if value}
+                
+            elif self.body_content_type_tab_widget.currentIndex() == 2:  # urlencoded
+                body_content = self.body_content_urlencoded_table.get_data()
+
+            elif self.body_content_type_tab_widget.currentIndex() == 3:  # binary
+                file_path = self.body_content_binary_file_path.text()
+                if file_path and file_path != "No file selected":
+                    files = {"file": open(file_path, 'rb')}
+
+            elif self.body_content_type_tab_widget.currentIndex() == 4:  # raw
+                body_content = self.body_input_raw_editor.toPlainText()
+
+            result = await service.invoke(url=self.line_edit.text(), method=self.combo_box.currentText(), headers=self.header_input.get_data(), body=body_content, files=files)
 
             color = "white"
             if result["status"] >= 100 and result["status"] < 200:
@@ -200,5 +229,17 @@ class MainWindow(QMainWindow):
         }
         self.raw_content_type_selector.setVisible(index == 4)
         headers = self.header_input.get_data()
-        headers["Content-Type"] = mime_type_mapping.get(index, "text/plain")
-        self.header_input.set_data(headers)
+
+        # not setting content-type for form-data as it will be automatically set by the requests library with the correct boundary
+        if index != 1 and index != 0:
+            headers["Content-Type"] = mime_type_mapping.get(index, "text/plain")
+            self.header_input.set_data(headers)
+        else:
+            if "Content-Type" in headers:
+                del headers["Content-Type"]
+            self.header_input.set_data(headers)
+
+    def select_binary_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Binary File")
+        if file_path:
+            self.body_content_binary_file_path.setText(file_path)

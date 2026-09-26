@@ -25,11 +25,13 @@ async def get(url, headers):
         res["content"] = result.text
     return res
 
-async def post(url, headers, body):
+async def post(url, headers, body, files=None):
     res = {}
     async with httpx.AsyncClient() as client:
         start_time = time.perf_counter()
-        result = await client.post(url=url, timeout=None, headers=headers, data=body)
+        print(f"Body: {body}")
+        print(f"Files: {files}")
+        result = await client.post(url=url, timeout=None, headers=headers, data=body, files=files)
         end_time = time.perf_counter()
     
     res["status"] = result.status_code
@@ -47,11 +49,11 @@ async def post(url, headers, body):
         res["content"] = result.text
     return res
 
-async def put(url, headers, body):
+async def put(url, headers, body, files=None):
     res = {}
     async with httpx.AsyncClient() as client:
         start_time = time.perf_counter()
-        result = await client.put(url=url, timeout=None, headers=headers, data=body)
+        result = await client.put(url=url, timeout=None, headers=headers, data=body, files=files)
         end_time = time.perf_counter()
     
     res["status"] = result.status_code
@@ -69,11 +71,11 @@ async def put(url, headers, body):
         res["content"] = result.text
     return res
 
-async def delete(url, headers):
+async def delete(url, headers, files=None):
     res = {}
     async with httpx.AsyncClient() as client:
         start_time = time.perf_counter()
-        result = await client.delete(url=url, timeout=None, headers=headers)
+        result = await client.delete(url=url, timeout=None, headers=headers, files=files)
         end_time = time.perf_counter()
     
     res["status"] = result.status_code
@@ -91,13 +93,13 @@ async def delete(url, headers):
         res["content"] = result.text
     return res
 
-def invoke(url, method, headers, body):
+def invoke(url, method, headers, body, files=None):
     # headers = transform_headers(headers)
     if method == "GET":
         return get(url, headers)
     elif method == "POST":
-        return post(url, headers, body)
+        return post(url, headers, body, files)
     elif method == "PUT":
-        return put(url, headers, body)
+        return put(url, headers, body, files)
     elif method == "DELETE":
-        return delete(url, headers)
+        return delete(url, headers, files)

@@ -1,37 +1,60 @@
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHeaderView
+from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHeaderView, QLineEdit, QFileDialog
 from PySide6.QtGui import QIcon, Qt
 from qt_material_icons import MaterialIcon
 
-class Table(QWidget):
-    def __init__(self, editable=True):
+class FilePickerCell(QWidget):
+    def __init__(self, parent=None):
         """
-        Initializes a Table widget.
-        - Three columns if editable -> delete action button, key and value.
-        - Two columns if not editable -> key and value.
+        Initializes a FilePickerCell widget that allows users to select files.
+        """
+        
+        super().__init__()
+        self.parent = parent
+        # self.parent_table = parent_table
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(4)
+
+        self.path_edit = QLineEdit()
+        self.path_edit.setPlaceholderText("Select file...")
+
+        self.browse_btn = QPushButton("Browse")
+        self.browse_btn.setFixedWidth(65)
+        self.browse_btn.clicked.connect(self._browse)
+
+        layout.addWidget(self.path_edit)
+        layout.addWidget(self.browse_btn)
+
+    def _browse(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Select File to Upload")
+
+        if path:
+            self.path_edit.setText(path)
+
+    def get_path(self) -> str:
+        return self.path_edit.text().strip()
+
+class FilesTable(QWidget):
+    def __init__(self):
+        """
+        Initializes a FilesTable widget with File selection fields.
         """
         
         super().__init__()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.table = None
-        self.editable = editable
-        if self.editable:
-            self.table = QTableWidget(0, 3)
-            self.table.setHorizontalHeaderLabels([" ", "Key", "Value"])
-            self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-            self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-            self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-            self.table.setColumnWidth(0, 36)
-            self.add_row()
-            self.table.cellChanged.connect(self.on_cell_changed)
-        else:
-            self.table = QTableWidget(0, 2)
-            self.table.setHorizontalHeaderLabels(["Key", "Value"])
-            self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-            self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-
-            self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        
+        self.table = QTableWidget(0, 3)
+        self.table.setHorizontalHeaderLabels([" ", "Key", "Value"])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(0, 36)
+        self.add_row()
+        self.table.cellChanged.connect(self.on_cell_changed)
+        
 
 
         self.table.verticalHeader().hide()
@@ -57,7 +80,8 @@ class Table(QWidget):
         row_position = self.table.rowCount()
         self.table.insertRow(row_position)
         self.table.setItem(row_position, 1, QTableWidgetItem(key))
-        self.table.setItem(row_position, 2, QTableWidgetItem(value))
+        picker = FilePickerCell(self)
+        self.table.setCellWidget(row_position, 2, picker)
         btn_container = QWidget()
         btn_layout = QHBoxLayout(btn_container)
         btn = QPushButton("")
@@ -77,10 +101,8 @@ class Table(QWidget):
         if self.table.rowCount() <= 1:
             return
         
-        
         position = button.parentWidget().pos()
         index = self.table.indexAt(position)
-        
 
         self.table.removeRow(index.row())
     
@@ -91,10 +113,12 @@ class Table(QWidget):
         data = {}
         for row in range(self.table.rowCount()):
             key_item = self.table.item(row, 1)
-            value_item = self.table.item(row, 2)
+            value_item = self.table.cellWidget(row, 2)
+            
             if key_item and value_item:
                 key = key_item.text().strip()
-                value = value_item.text().strip()
+                value = value_item.get_path() if value_item else None
+                # print(f"Value: {value}")
                 if key and value:
                     data[key] = value
         return data
@@ -102,23 +126,13 @@ class Table(QWidget):
     def set_data(self, data):
         """
         Populates the table with the provided data dictionary. Clears existing rows before adding new ones."""
-
-        if data:
-            self.table.setRowCount(0)
-            if self.editable:
-                for key, value in data.items():
-                    self.add_row({key: value})
-            
-            else:
-                for key, value in data.items():
-                    self.table.insertRow(self.table.rowCount())
-                    row_position = self.table.rowCount() - 1
-                    self.table.setItem(row_position, 0, QTableWidgetItem(key))
-                    self.table.setItem(row_position, 1, QTableWidgetItem(value))
-        else:
-            self.table.setRowCount(0)
-            if self.editable:
-                self.add_row(None)
+        
+        self.table.setRowCount(0)
+        for key, value in data.items():
+            self.table.insertRow(self.table.rowCount())
+            row_position = self.table.rowCount() - 1
+            self.table.setItem(row_position, 0, QTableWidgetItem(key))
+            self.table.setItem(row_position, 1, QTableWidgetItem(value))
     
     def on_cell_changed(self, row, column):
         """

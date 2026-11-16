@@ -1,14 +1,16 @@
+import os
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import Qt
 import darkdetect
 import sys
 from qasync import QEventLoop
 import asyncio
-from PySide6.QtCore import Qt, QFile, QTextStream
+from PySide6.QtCore import Qt
+from PySide6.QtGui import Qt
 from ui import MainWindow
-import os
 import components
 import hupper
+
 
 def create_app():
     app = QApplication(sys.argv)
@@ -36,5 +38,5 @@ def create_app():
         loop.run_forever()
 
 if __name__ == "__main__":
-    # create_app()
-    reloader = hupper.start_reloader("app.create_app")
+    create_app()
+    # reloader = hupper.start_reloader("app.create_app")

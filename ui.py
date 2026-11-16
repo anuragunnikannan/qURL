@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QApplication, QButtonGroup, QFileDialog, QRadioButton, QSizePolicy, QStackedWidget, QTableWidget, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QPushButton, QPlainTextEdit, QSplitter, QTabWidget, QLabel, QStyledItemDelegate
+from PySide6.QtWidgets import QApplication, QButtonGroup, QFileDialog, QRadioButton, QSizePolicy, QStackedWidget, QTableWidget, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QPushButton, QPlainTextEdit, QSplitter, QTabWidget, QLabel, QStyledItemDelegate, QTextBrowser
+from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import Qt, QFont, QFontMetrics
 from components.dynamic_syntax_highlighter import DynamicHighlighter
 from components.files_table import FilesTable
@@ -13,6 +14,7 @@ from components.code_editor import CodeEditor
 from utils.http_status_codes import HTTP_STATUS_CODES
 from utils.formatter import format_response
 import traceback
+from config import config
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -52,7 +54,7 @@ class MainWindow(QMainWindow):
         self.body_input_raw_editor = CodeEditor()
         metrics = QFontMetrics(self.header_input.font())
         self.body_input_raw_editor.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
-        self.body_input_raw_editor.setFont(QFont("monospace"))
+        self.body_input_raw_editor.setFont(QFont(config["fixed_width_font"]))
 
         body_tab = QWidget()
         body_tab_layout = QVBoxLayout(body_tab)
@@ -119,7 +121,7 @@ class MainWindow(QMainWindow):
         self.response_viewer = CodeEditor()
         metrics = QFontMetrics(self.response_viewer.font())
         self.response_viewer.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
-        self.response_viewer.setFont(QFont("monospace"))
+        self.response_viewer.setFont(QFont(config["fixed_width_font"]))
         self.response_viewer.setReadOnly(True)
         
         # Dynamic highlighter setup
@@ -129,11 +131,17 @@ class MainWindow(QMainWindow):
         
         self.response_header_editor = Table(editable=False)
 
+        self.response_preview = QWebEngineView()
+        
+        # setting blank html to avoid window flicker
+        self.response_preview.setHtml("<p></p>")
+
         response_tab_widget = QTabWidget()
         
 
         response_tab_widget.addTab(self.response_viewer, "Response")
         response_tab_widget.addTab(self.response_header_editor, "Headers")
+        response_tab_widget.addTab(self.response_preview, "Preview")
         
         central_layout.addWidget(response_tab_widget)
         central_layout.setStretchFactor(0, 1)
@@ -190,6 +198,9 @@ class MainWindow(QMainWindow):
             self.response_header_editor.set_data(result["headers"])
             self.response_viewer.setPlainText(format_response(str(result["content"]), result["headers"]["content-type"]))
             self.response_viewer_highlighter.detect_and_update(str(result["content"]))
+            if "text/html" in result["headers"]["content-type"]:
+                self.response_preview.setHtml(result["content"])
+                
 
             self.status_label.setText(f"Status:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['status'])} {HTTP_STATUS_CODES[result['status']]}</span>")
             self.size_label.setText(f"Size:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['size'])} bytes</span>")

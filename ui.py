@@ -198,8 +198,11 @@ class MainWindow(QMainWindow):
             self.response_header_editor.set_data(result["headers"])
             self.response_viewer.setPlainText(format_response(str(result["content"]), result["headers"]["content-type"]))
             self.response_viewer_highlighter.detect_and_update(str(result["content"]))
+            
             if "text/html" in result["headers"]["content-type"]:
                 self.response_preview.setHtml(result["content"])
+            else:
+                self.response_preview.setHtml("<p></p>")
                 
 
             self.status_label.setText(f"Status:&nbsp;&nbsp;&nbsp;<span style='color: {color}'>{str(result['status'])} {HTTP_STATUS_CODES[result['status']]}</span>")

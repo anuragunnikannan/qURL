@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import Qt
 from ui import MainWindow
 import components
-import hupper
+# import hupper
 
 
 def create_app():

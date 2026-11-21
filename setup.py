@@ -4,7 +4,7 @@ setup(
     name="qURL",
     version="1.0.0",
     packages=find_packages(),
-    py_modules=["app", "ui", "service"],
+    py_modules=["app", "ui", "service", "config"],
     entry_points={
         "console_scripts": [
             "qURL=app:create_app",

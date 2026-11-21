@@ -161,14 +161,5 @@
                 }
             ]
         }
-    ],
-    "finish-args": [
-        "--socket=wayland",
-        "--socket=x11",
-        "--socket=fallback-x11",
-        "--share=ipc",
-        "--device=dri",
-        "--share=network",
-        "--env=QTWEBENGINEPROCESS_PATH=/app/lib/libexec/QtWebEngineProcess"
     ]
 }

@@ -12,7 +12,8 @@
         "--socket=fallback-x11",
         "--share=ipc",
         "--device=dri",
-        "--share=network"
+        "--share=network",
+        "--env=QTWEBENGINEPROCESS_PATH=/app/lib/libexec/QtWebEngineProcess"
     ],
     "modules": [
         "python3-requirements-build.json",

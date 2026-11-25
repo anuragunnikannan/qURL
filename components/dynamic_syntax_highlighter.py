@@ -14,15 +14,21 @@ from pygments.lexers import (
 from pygments.styles import get_style_by_name
 from pygments.token import Token
 from pygments.util import ClassNotFound
+import darkdetect
 
 
 class DynamicHighlighter(QSyntaxHighlighter):
 
-	def __init__(self, document, style_name="monokai"):
+	def __init__(self, document):
 		super().__init__(document)
 		self.lexer = JsonLexer()
 		self.detected_mime = "application/json"
 		self.detected_name = "json"
+		style_name = ""
+		if darkdetect.isDark():
+			style_name = "monokai"
+		else:
+			style_name = "default"
 		self.styles = self._build_style_map(style_name)
 
 	def _build_style_map(self, style_name):
